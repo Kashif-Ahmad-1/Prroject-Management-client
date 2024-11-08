@@ -4,7 +4,7 @@ import LoginPage from './Auth/LoginPage';
 // import AdminDashboard from './components/AdminDashboard';
 // import DeveloperDashboard from './components/DeveloperDashboard';
 import SupervisorDashboard from './pages/SupervisorDashboard';
-
+import TaskDetails from './pages/TaskDetails'
 const App = () => {
   return (
     <Router>
@@ -18,6 +18,7 @@ const App = () => {
         
         {/* Home route */}
         <Route path="/" element={<h1>Welcome to the Project Management System</h1>} />
+        <Route path='/task/:id' element={<TaskDetails />} />
       </Routes>
     </Router>
   );

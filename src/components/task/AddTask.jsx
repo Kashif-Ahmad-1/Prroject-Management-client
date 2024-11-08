@@ -11,8 +11,7 @@ import axios from "axios";
 const PRIORIRY = ["HIGH", "MEDIUM", "NORMAL", "LOW"];
 const WEBSITE_TYPES = ["E-commerce", "Portfolio", "Blog", "Corporate", "Other"];
 
-const AddTask = ({ open, setOpen, task, isEdit }) => {
-  // Initialize states for each field, with default values from task (if editing)
+const AddTask = ({ open, setOpen, task, isEdit ,onTaskUpdate }) => {
   const [priority, setPriority] = useState(isEdit ? task.priority.toUpperCase() : PRIORIRY[2]);
   const [websiteType, setWebsiteType] = useState(isEdit ? task.websiteType : WEBSITE_TYPES[0]);
   const [assets, setAssets] = useState([]); // For handling file upload (if any)
@@ -240,5 +239,6 @@ const AddTask = ({ open, setOpen, task, isEdit }) => {
     </ModalWrapper>
   );
 };
+
 
 export default AddTask;

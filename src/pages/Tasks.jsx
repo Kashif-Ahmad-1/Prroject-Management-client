@@ -33,66 +33,98 @@ const Tasks = () => {
   const [loading, setLoading] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [error, setError] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Function to fetch tasks
+  const fetchTasks = async () => {
+    try {
+      setLoading(true); // Set loading to true when fetching tasks
+      const token = localStorage.getItem("authToken");
+      const response = await axios.get("http://localhost:5000/api/projects", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setTasks(response.data.projects); // Assuming response is an array of tasks
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setError("Failed to load tasks.");
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const token = localStorage.getItem("authToken"); // Assuming authToken is stored in localStorage
-        const response = await axios.get("http://localhost:5000/api/projects", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+    fetchTasks(); // Fetch tasks when component mounts
+  }, []); // Empty dependency array means it runs only once when the component mounts
 
-        setTasks(response.data.projects); // Assuming the response data is an array of tasks
-        setLoading(false);
-      } catch (err) {
-        console.error("Error fetching tasks:", err);
-        setError("Failed to load tasks.");
-        setLoading(false);
+  // Handle task deletion
+  const handleTaskDeleted = async (taskId) => {
+    try {
+      const response = await axios.delete(`http://localhost:5000/api/projects/${taskId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
+
+      if (response.status === 200) {
+        fetchTasks(); // Refetch tasks after successful deletion
       }
-    };
+    } catch (err) {
+      console.error("Error deleting task:", err);
+    }
+  };
 
-    fetchTasks();
-  }, []);
+  // Handle task update
+  const handleTaskUpdate = (updatedTask) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task._id === updatedTask._id ? updatedTask : task
+      )
+    );
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   if (loading) {
-    return <div>Loading tasks...</div>;
+    return (
+      <div className="w-full h-screen flex justify-center items-center bg-gray-100">
+        <div className="animate-spin border-t-4 border-blue-600 w-16 h-16 border-solid rounded-full" />
+      </div>
+    );
   }
 
   if (error) {
-    return <div>{error}</div>;
+    return <div className="py-6 text-center text-red-500">{error}</div>;
   }
 
-  // Static title for "Tasks"
-  const title = "Tasks";
-
-  return loading ? (
-    <div className="py-10">
-      <Loading />
-    </div>
-  ) : (
-    <div className="w-full min-h-screen flex bg-gray-100">
+  return (
+    <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <Sidebar />
-  
+      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+
       {/* Main Content Area */}
-      <div className="flex-1 pl-64">
-        <Header setOpen={setOpen} />
-  
-        <div className="py-6 px-6">
+      <div
+        className={`flex-1 transition-all duration-300 ease-in-out ${
+          sidebarOpen ? "pl-64" : "pl-16"
+        } md:pl-64`}
+      >
+        <Header setOpen={setOpen} toggleSidebar={toggleSidebar} />
+
+        <div className="py-6 px-4 md:px-8">
           {/* Title and Create Task Button */}
           <div className="flex items-center justify-between mb-6">
-            <Title title={title} />
+            <h1 className="text-2xl font-semibold text-gray-800">Tasks</h1>
             <Button
               onClick={() => setOpen(true)}
               label="Create Task"
               icon={<IoMdAdd className="text-lg" />}
-              className="flex flex-row-reverse gap-1 items-center bg-blue-600 text-white rounded-md py-2 2xl:py-2.5"
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-md py-2 px-4 flex items-center gap-2"
             />
           </div>
-  
+
           {/* Tabs for View Selection */}
           <Tabs tabs={TABS} setSelected={setSelected}>
             <div className="w-full flex justify-between gap-4 md:gap-x-12 py-4">
@@ -100,23 +132,21 @@ const Tasks = () => {
               <TaskTitle label="In Progress" className={TASK_TYPE["in progress"]} />
               <TaskTitle label="Completed" className={TASK_TYPE.completed} />
             </div>
-  
+
             {/* Conditional rendering for BoardView or Table */}
             {selected !== 1 ? (
-              <BoardView tasks={tasks} />
+              <BoardView tasks={tasks} onTaskDeleted={handleTaskDeleted} />
             ) : (
-              <div className="w-full">
-                <Table tasks={tasks} />
-              </div>
+              <Table tasks={tasks} />
             )}
           </Tabs>
         </div>
-  
+
         {/* Add Task Modal */}
-        <AddTask open={open} setOpen={setOpen} />
+        <AddTask open={open} setOpen={setOpen} onTaskUpdate={handleTaskUpdate} />
       </div>
     </div>
   );
-}  
+};
 
 export default Tasks;
