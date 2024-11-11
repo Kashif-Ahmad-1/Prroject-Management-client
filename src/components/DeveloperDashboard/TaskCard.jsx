@@ -3,11 +3,8 @@ import clsx from "clsx";
 import { MdAttachFile, MdKeyboardArrowDown, MdKeyboardArrowUp, MdKeyboardDoubleArrowUp } from "react-icons/md";
 import { BiMessageAltDetail } from "react-icons/bi";
 import { FaList } from "react-icons/fa";
-import UserInfo from "./UserInfo";
 import { IoMdAdd } from "react-icons/io";
-import AddSubTask from "./task/AddSubTask";
-import TaskDialog from "./task/TaskDialog";
-import AssignToDeveloperModal from './AssignToDeveloperModal';
+
 // Priority icons based on priority
 const ICONS = {
   high: <MdKeyboardDoubleArrowUp />,
@@ -15,22 +12,16 @@ const ICONS = {
   low: <MdKeyboardArrowDown />,
 };
 
-export const BGS = [
-  "bg-blue-600",
-  "bg-yellow-600",
-  "bg-red-600",
-  "bg-green-600",
-];
-
-
 const TASK_TYPE = {
   todo: "bg-blue-600",
   "in progress": "bg-yellow-600",
   completed: "bg-green-600",
 };
 
-const TaskCard = ({ task, onTaskDeleted }) => {
+const TaskCard = ({ task, onTaskDeleted, onActivityUpdate }) => {
   const [open, setOpen] = useState(false);
+  const [isActivityPanelOpen, setActivityPanelOpen] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState(task.activities || "assigned");
 
   // Extracting relevant task information
   const { _id, projectName, projectTitle, dateProject, priority, price, projectCompletionTime, websiteType, development, figmaDesign, backendDevelopment } = task;
@@ -39,6 +30,20 @@ const TaskCard = ({ task, onTaskDeleted }) => {
     development: development?.assignDeveloper,
     figmaDesign: figmaDesign?.assignDeveloper,
     backendDevelopment: backendDevelopment?.assignDeveloper
+  };
+
+  // Handle activity change
+  const handleActivityChange = (e) => {
+    const newActivity = e.target.value;
+    setSelectedActivity(newActivity);
+
+    // Call the parent function to update the activity
+    if (onActivityUpdate) {
+      onActivityUpdate(_id, newActivity);
+    }
+
+    // Close the activity panel after update
+    setActivityPanelOpen(false); // Hides the panel
   };
 
   return (
@@ -54,11 +59,10 @@ const TaskCard = ({ task, onTaskDeleted }) => {
           <span className="text-lg">{ICONS[priority]}</span>
           <span className="uppercase">{priority} Priority</span>
         </div>
-        <TaskDialog task={task} onTaskDeleted={onTaskDeleted} />
       </div>
 
       {/* Project Name */}
-      <div className="text-xl font-bold text-gray-800">{projectName}</div>
+      <div className="text-2xl font-bold text-gray-800">{projectName}</div>
 
       {/* Project Title */}
       <div className="flex items-center gap-2">
@@ -86,35 +90,48 @@ const TaskCard = ({ task, onTaskDeleted }) => {
             <FaList />
             <span>{0}</span> {/* Placeholder for subtask count */}
           </div>
-
-          <div className='flex flex-row-reverse'>
-  {task?.teams?.map((m, index) => (
-    <div
-      key={m._id} // Use _id or any unique identifier as the key
-      className={clsx(
-        "w-7 h-7 rounded-full text-white flex items-center justify-center text-sm -mr-1",
-        BGS[index % BGS?.length] // Assuming BGS is an array of background colors
-      )}
-    >
-      <UserInfo user={m} /> {/* Passing the user object */}
-    </div>
-  ))}
-</div>
         </div>
-
-       
-
       </div>
 
-      <div className="w-full border-t border-gray-200 my-3" /> 
-      
+      {/* Activity Update Toggle */}
+      <div className="flex justify-between items-center">
+        <h5 className="text-sm font-semibold">Activity: {selectedActivity}</h5>
+        <button
+          className="text-blue-600 hover:text-blue-800 text-sm"
+          onClick={() => setActivityPanelOpen(!isActivityPanelOpen)} // Toggle activity panel
+        >
+          {isActivityPanelOpen ? "Hide" : "Update Activity"}
+        </button>
+      </div>
 
-      {/* Additional Project Details overflow-auto*/}
-      <div className="mt-4 space-y-2 ">
-        <h5 className="text-sm font-semibold">Price: <span className="font-normal">${price}</span></h5>
-        <h5 className="text-sm font-semibold">Completion Time: <span className="font-normal">{projectCompletionTime}</span></h5>
-        <h5 className="text-sm font-semibold">Project Type: <span className='bg-blue-600/10 px-3 py-1 rounded0full text-blue-700 font-medium'>{websiteType}</span></h5>
-        
+      {/* Activity Panel */}
+      {isActivityPanelOpen && (
+        <div className="mt-2 space-y-2">
+          <select
+            value={selectedActivity}
+            onChange={handleActivityChange}
+            className="w-full p-2 border rounded-md text-sm"
+          >
+            <option value="assigned">Assigned</option>
+            <option value="started">Started</option>
+            <option value="in progress">In Progress</option>
+            <option value="bug">Bug</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+      )}
+
+      {/* Additional Project Details */}
+      <div className="mt-4 space-y-2 overflow-auto">
+        <h5 className="text-sm font-semibold">
+          Price: <span className="font-normal">${price}</span>
+        </h5>
+        <h5 className="text-sm font-semibold">
+          Completion Time: <span className="font-normal">{projectCompletionTime}</span>
+        </h5>
+        <h5 className="text-sm font-semibold">
+          Website Type: <span className="font-normal">{websiteType}</span>
+        </h5>
       </div>
 
       {/* Add Subtask Button */}
@@ -127,9 +144,6 @@ const TaskCard = ({ task, onTaskDeleted }) => {
           <span>Assign Developer</span>
         </button>
       </div>
-
-      {/* Add Subtask Modal */}
-      <AssignToDeveloperModal open={open} setOpen={setOpen} taskId={_id} onAssignComplete={onTaskDeleted} />
     </div>
   );
 };

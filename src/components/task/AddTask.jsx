@@ -10,13 +10,14 @@ import axios from "axios";
 
 const PRIORIRY = ["HIGH", "MEDIUM", "NORMAL", "LOW"];
 const WEBSITE_TYPES = ["E-commerce", "Portfolio", "Blog", "Corporate", "Other"];
-
+const ACTIVITY_STATUS = ["ASSIGNED", "STARTED", "IN PROGRESS", "BUG", "COMPLETED", "COMMENTED"];
 const AddTask = ({ open, setOpen, task, isEdit ,onTaskUpdate }) => {
   const [priority, setPriority] = useState(isEdit ? task.priority.toUpperCase() : PRIORIRY[2]);
+  const [activity, setActivity] = useState(isEdit ? task.activities.toUpperCase() : ACTIVITY_STATUS[0]); // Default to 'assigned'
   const [websiteType, setWebsiteType] = useState(isEdit ? task.websiteType : WEBSITE_TYPES[0]);
   const [assets, setAssets] = useState([]); // For handling file upload (if any)
   const [uploading, setUploading] = useState(false);
-
+  const [removeAssets, setRemoveAssets] = useState([]);
   const {
     register,
     handleSubmit,
@@ -37,50 +38,67 @@ const AddTask = ({ open, setOpen, task, isEdit ,onTaskUpdate }) => {
 
   const submitHandler = async (data) => {
     const token = localStorage.getItem("authToken");
+  
+    // Create a formData object to hold the files and form data
+    const formData = new FormData();
+    
+    // Append project data to the formData
+    formData.append("projectName", data.projectName);
+    formData.append("projectTitle", data.projectTitle);
+    formData.append("priority", priority.toLowerCase());
+    formData.append("price", data.price);
+    formData.append("projectCompletionTime", data.projectCompletionTime);
+    formData.append("websiteType", websiteType);
+    formData.append("activities", activity.toLowerCase()); 
+    formData.append("description", data.description);
+    
+    // Append each asset to formData
+    for (let i = 0; i < assets.length; i++) {
+      formData.append("assets", assets[i]);
+    }
+
+    // If there are assets to be removed, we append them to the formData as well
+  if (removeAssets.length > 0) {
+    for (let i = 0; i < removeAssets.length; i++) {
+      formData.append("removeAssets", removeAssets[i]); // Send asset URLs to be removed
+    }
+  }
+  
+    setUploading(true);
+  
     try {
-      const projectData = {
-        projectName: data.projectName,
-        projectTitle: data.projectTitle,
-        priority: priority.toLowerCase(),
-        price: data.price,
-        projectCompletionTime: data.projectCompletionTime,
-        websiteType,
-        description: data.description,
-      };
-
-      setUploading(true);
-
       let response;
       if (isEdit) {
         // Update existing project
         response = await axios.put(
           `http://localhost:5000/api/projects/${task._id}`,
-          projectData,
+          formData,
           {
             headers: {
               "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
+              "Content-Type": "multipart/form-data", // Set content type for form-data
             },
           }
         );
       } else {
-        // Create a new project
+        // Create new project
         response = await axios.post(
           "http://localhost:5000/api/projects/create",
-          projectData,
+          formData,
           {
             headers: {
               "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
+              "Content-Type": "multipart/form-data", // Set content type for form-data
             },
           }
         );
       }
-
-      if (response.status === 200) {
+  
+      if (response.status === 200 || response.status === 201) {
         alert(isEdit ? "Project updated successfully!" : "Project added successfully!");
-        setOpen(false); // Close the modal after successful submission
+        setOpen(false); // Close modal after submission
       }
+      window.location.reload()
     } catch (error) {
       console.error("Error submitting the form:", error);
       alert("Failed to add/update project!");
@@ -88,12 +106,14 @@ const AddTask = ({ open, setOpen, task, isEdit ,onTaskUpdate }) => {
       setUploading(false);
     }
   };
+  
 
   // Handle file selection for assets
   const handleSelect = (e) => {
-    setAssets(e.target.files);
+    setAssets(e.target.files); // Set the selected files to state
     console.log("Selected files:", e.target.files); // Debugging files
   };
+  
 
   return (
     <ModalWrapper open={open} setOpen={setOpen}>
@@ -193,6 +213,14 @@ const AddTask = ({ open, setOpen, task, isEdit ,onTaskUpdate }) => {
               lists={WEBSITE_TYPES}
               selected={websiteType}
               setSelected={setWebsiteType}
+            />
+          </div>
+          <div className="w-full">
+            <SelectList
+              label="Activities"
+              lists={ACTIVITY_STATUS}
+              selected={activity}
+              setSelected={setActivity}
             />
           </div>
 

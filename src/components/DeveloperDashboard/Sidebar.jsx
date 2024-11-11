@@ -20,7 +20,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     >
       <div className="flex flex-col gap-6">
         <div className="flex justify-between items-center mb-10">
-          <h1 className="text-xl font-bold text-white">Smart ItBox</h1>
+          <h1 className="text-xl font-bold">TaskMe</h1>
           <button
             className="md:hidden text-white"
             onClick={toggleSidebar}

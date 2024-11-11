@@ -43,11 +43,11 @@ const TaskDialog = ({ task, onTaskDeleted }) => {
       icon: <MdOutlineEdit className="mr-2 h-5 w-5" aria-hidden="true" />,
       onClick: () => setOpenEdit(true),
     },
-    {
-      label: "Add Sub-Task",
-      icon: <MdAdd className="mr-2 h-5 w-5" aria-hidden="true" />,
-      onClick: () => setOpen(true),
-    },
+    // {
+    //   label: "Add Sub-Task",
+    //   icon: <MdAdd className="mr-2 h-5 w-5" aria-hidden="true" />,
+    //   onClick: () => setOpen(true),
+    // },
   ];
 
   return (

@@ -51,7 +51,12 @@ const TaskDetails = () => {
   const [task, setTask] = useState(null);
   const [selected, setSelected] = useState(0); // Set the default tab to 0 (only one tab)
   const [open, setOpen] = useState(false);
-  
+  const [isOpen, setIsOpen] = useState(false);
+
+
+  const toggleSidebar = () => {
+    setIsOpen((prev) => !prev); // Toggle sidebar visibility
+  };
 
   useEffect(() => {
     // Fetch task data from the API
@@ -93,9 +98,14 @@ const TaskDetails = () => {
 
   return (
     <div className="w-full min-h-screen flex bg-gray-100">
-      <Sidebar />
-      <div className="flex-1 pl-64">
-        <Header setOpen={setOpen} />
+       <Sidebar isOpen={isOpen} toggleSidebar={toggleSidebar} />
+       <div
+         className={`flex-1 transition-all ${
+          // For mobile view, add margin when sidebar is open
+          isOpen ? "ml-64" : "ml-0"
+        } md:ml-0`} // For desktop, always apply margin-left of 64
+      >
+      <Header setOpen={setOpen} toggleSidebar={toggleSidebar} />
         <div className="py-6 px-6">
           <h1 className="text-2xl text-gray-600 font-bold">{projectName}</h1>
 

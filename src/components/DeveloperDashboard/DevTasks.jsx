@@ -3,17 +3,17 @@ import axios from "axios";
 import { FaList } from "react-icons/fa";
 import { MdGridView } from "react-icons/md";
 import { IoMdAdd } from "react-icons/io";
-import Loading from "../components/Loader";
-import Title from "../components/Title";
-import Button from "../components/Button";
-import Tabs from "../components/Tabs";
-import TaskTitle from "../components/TaskTitle";
-import BoardView from "../components/BoardView";
+import Loading from "../../components/Loader";
+import Title from "../../components/Title";
+import Button from "../../components/Button";
+import Tabs from "../../components/Tabs";
+import TaskTitle from "../../components/TaskTitle";
+import BoardView from "./BoardView";
 
-import Table from "../components/task/Table";
-import AddTask from "../components/task/AddTask";
+import Table from "./Table";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+
 // Static task type mapping
 const TASK_TYPE = {
   todo: "bg-blue-600",
@@ -27,7 +27,7 @@ const TABS = [
   { title: "List View", icon: <FaList /> },
 ];
 
-const Tasks = () => {
+const DevTasks = () => {
   const [selected, setSelected] = useState(0);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -110,6 +110,41 @@ const handleTaskDeleted = async (taskId) => {
     );
   };
 
+
+  const handleActivityUpdate = async (taskId, newActivity) => {
+    // Define valid activities
+    const validActivities = ['assigned', 'started', 'in progress', 'bug', 'completed', 'commented'];
+  
+    // Validate the new activity value
+    if (!validActivities.includes(newActivity)) {
+      alert("Invalid activity status");
+      return;
+    }
+  
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await axios.put(
+        `http://localhost:5000/api/projects/${taskId}/activity`,
+        { activity: newActivity },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      if (response.status === 200) {
+        // Update task list after activity change
+        const updatedTask = response.data.project;
+        handleTaskUpdate(updatedTask); // Update the task in the state
+      }
+    } catch (err) {
+      console.error("Error updating activity:", err);
+      setError("Failed to update activity.");
+    }
+  };
+  
+
   if (loading) {
     return <div>Loading tasks...</div>;
   }
@@ -120,7 +155,6 @@ const handleTaskDeleted = async (taskId) => {
 
   // Static title for "Tasks"
   const title = "Tasks";
-  
 
   return loading ? (
     <div className="py-10">
@@ -138,12 +172,12 @@ const handleTaskDeleted = async (taskId) => {
           isOpen ? "ml-64" : "ml-0"
         } md:ml-0`} // For desktop, always apply margin-left of 64
       >
-        <Header  setOpen={setOpen} toggleSidebar={toggleSidebar} />
+        <Header setOpen={setOpen} toggleSidebar={toggleSidebar} />
   
         <div className="py-6 px-6">
           {/* Title and Create Task Button */}
           <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl text-gray-600 font-bold">Projects</h1>
+            <Title title={title} />
             <Button
               onClick={() => setOpen(true)}
               label="Create Task"
@@ -162,7 +196,7 @@ const handleTaskDeleted = async (taskId) => {
   
             {/* Conditional rendering for BoardView or Table */}
             {selected !== 1 ? (
-             <BoardView tasks={tasks} onTaskDeleted={handleTaskDeleted} />
+             <BoardView tasks={tasks} onTaskDeleted={handleTaskDeleted} onActivityUpdate={handleActivityUpdate}/>
             ) : (
               <div className="w-full">
                 <Table tasks={tasks} />
@@ -171,11 +205,10 @@ const handleTaskDeleted = async (taskId) => {
           </Tabs>
         </div>
   
-        {/* Add Task Modal */}
-        <AddTask open={open} setOpen={setOpen} onTaskUpdate={handleTaskUpdate}/>
+      
       </div>
     </div>
   );
 }  
 
-export default Tasks;
+export default DevTasks;
